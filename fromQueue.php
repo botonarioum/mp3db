@@ -4,6 +4,7 @@ require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/Entities/Storage.php';
 
 use Illuminate\Database\Capsule\Manager as Capsule;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 
 define('DEFAULT_TITLE', 'unknown track');
@@ -186,6 +187,9 @@ $callback = function (AMQPMessage $message) use ($storageList, $botToken) {
     var_dump('Finish handle');
     unlink($fileName);
 };
+
+$connection = new AMQPStreamConnection($amqpCredentials['host'], $amqpCredentials['port'], $amqpCredentials['user'], $amqpCredentials['password'], $amqpCredentials['vhost']);
+$channel = $connection->channel();
 
 $channel->basic_consume($amqpConnectSettings['queue'], '', false, true, false, false, $callback);
 
