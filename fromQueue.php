@@ -23,6 +23,11 @@ $amqpCredentials = [
     'vhost' => getenv('VHOST')
 ];
 
+$amqpConnectSettings = [
+    'exchanger' => getenv('EXCHANGER'),
+    'queue' => getenv('QUEUE')
+];
+
 $databaseCredentials = [
     'driver'    => getenv('DB_DRIVER'),
     'host'      => getenv('DB_HOST'),
@@ -169,7 +174,7 @@ function handleForAll(string $filePath, string $downloadUrl, array $storageList,
         try {
             handle($storage, $filePath, $downloadUrl, $botToken);
         } catch (Exception $exception) {
-            var_dump($exception);
+            var_dump($exception->getMessage());
         }
     }
 }
@@ -192,9 +197,6 @@ $connection = new AMQPStreamConnection($amqpCredentials['host'], $amqpCredential
 $channel = $connection->channel();
 
 $channel->basic_consume($amqpConnectSettings['queue'], '', false, true, false, false, $callback);
-
-$channel->close();
-$connection->close();
 
 while (count($channel->callbacks)) {
     $channel->wait();
