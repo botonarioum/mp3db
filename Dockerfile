@@ -6,7 +6,5 @@ RUN apt-get install -y git
 
 RUN docker-php-ext-install \
         mbstring \
-#        zip \
-#        opcache \
         bcmath \
-#        pdo pdo_pgsql
+        pdo pdo_mysql

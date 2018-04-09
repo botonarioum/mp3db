@@ -2,6 +2,8 @@
   "require": {
     "lstrojny/functional-php": "^1.7",
     "symfony/dotenv": "^4.0",
-    "php-amqplib/php-amqplib": "^2.7"
+    "php-amqplib/php-amqplib": "^2.7",
+    "guzzlehttp/guzzle": "^6.3",
+    "illuminate/database": "^5.6"
   }
 }
