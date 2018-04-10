@@ -15,17 +15,8 @@ $dotenv->load('.env');
 
 $botToken = getenv('BOT_TOKEN');
 
-$amqpCredentials = [
-    'host' => getenv('HOST'),
-    'port' => getenv('PORT'),
-    'user' => getenv('USER'),
-    'password' => getenv('PASSWORD'),
-    'vhost' => getenv('VHOST')
-];
-
 $amqpConnectSettings = [
-    'exchanger' => getenv('EXCHANGER'),
-    'queue' => getenv('QUEUE')
+    'queue' => getenv('QUEUE_NAME')
 ];
 
 $databaseCredentials = [
@@ -193,7 +184,9 @@ $callback = function (AMQPMessage $message) use ($storageList, $botToken) {
     unlink($fileName);
 };
 
-$connection = new AMQPStreamConnection($amqpCredentials['host'], $amqpCredentials['port'], $amqpCredentials['user'], $amqpCredentials['password'], $amqpCredentials['vhost']);
+$url = parse_url(getenv('CLOUDAMQP_URL'));
+$connection = new AMQPStreamConnection($url['host'], 5672, $url['user'], $url['pass'], substr($url['path'], 1));
+
 $channel = $connection->channel();
 
 $channel->basic_consume($amqpConnectSettings['queue'], '', false, true, false, false, $callback);
