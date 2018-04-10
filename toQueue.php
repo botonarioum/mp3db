@@ -2,33 +2,26 @@
 
 require __DIR__ . '/vendor/autoload.php';
 
+use PhpAmqpLib\Connection\AMQPConnection;
+use PhpAmqpLib\Message\AMQPMessage;
+
 $dotenv = new \Symfony\Component\Dotenv\Dotenv();
 $dotenv->load('.env');
 
-$amqpCredentials = [
-    'host' => getenv('HOST'),
-    'port' => getenv('PORT'),
-    'user' => getenv('USER'),
-    'password' => getenv('PASSWORD'),
-    'vhost' => getenv('VHOST')
-];
-
-use PhpAmqpLib\Connection\AMQPStreamConnection;
-use PhpAmqpLib\Message\AMQPMessage;
-
 $amqpConnectSettings = [
-    'exchanger' => getenv('EXCHANGER'),
-    'queue' => getenv('QUEUE')
+    'queue' => getenv('QUEUE_NAME')
 ];
 
-$connection = new AMQPStreamConnection($amqpCredentials['host'], $amqpCredentials['port'], $amqpCredentials['user'], $amqpCredentials['password'], $amqpCredentials['vhost']);
+$url = parse_url(getenv('CLOUDAMQP_URL'));
+$connection = new AMQPConnection($url['host'], 5672, $url['user'], $url['pass'], substr($url['path'], 1));
 $channel = $connection->channel();
 
-$examplePayload = ['payload' => ['url' => 'http://cdndl.zaycev.net/play/7059615/X84lQRZH3ZHl_e0BCTnCTKlOX0CXB5j-V8weU9Lm8gWINAOzv63N3q8bMrwHntoF5U5nDQcM7BVGdumCmSI-CKO5ntXYd7Ddy64CUYPvBvNxy91JBKdypjE3xAwR_YQKio6uCGqEaKPbNRO_SGwVCW9rVJTRQKbJt4z_Jz98Bgw9wxndE10_153BXUkqBdhDE9XkrA?dlKind=play&format=json']];
-$message = new AMQPMessage(json_encode($examplePayload));
+$properties = array('content_type' => 'text/plain', 'delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT);
+$examplePayload = json_encode(['payload' => ['url' => 'http://cdndl.zaycev.net/play/7059615/X84lQRZH3ZHl_e0BCTnCTKlOX0CXB5j-V8weU9Lm8gWINAOzv63N3q8bMrwHntoF5U5nDQcM7BVGdumCmSI-CKO5ntXYd7Ddy64CUYPvBvNxy91JBKdypjE3xAwR_YQKio6uCGqEaKPbNRO_SGwVCW9rVJTRQKbJt4z_Jz98Bgw9wxndE10_153BXUkqBdhDE9XkrA?dlKind=play&format=json']]);
+$msg = new AMQPMessage($examplePayload, $properties);
 
-$channel->batch_basic_publish($message, $amqpConnectSettings['exchanger']);
-$channel->publish_batch();
+
+$channel->basic_publish($msg, '', $amqpConnectSettings['queue']);
 
 $channel->close();
 $connection->close();
