@@ -130,7 +130,9 @@ function upload(string $filePath, stdClass $storage, string $botToken)
 {
     $options = ['multipart' => [
         ['name' => 'chat_id', 'contents' => $storage->name],
-        ['name' => 'audio', 'contents' => fopen($filePath, 'r')]]];
+        ['name' => 'audio', 'contents' => fopen($filePath, 'r')]],
+        ['name' => 'disable_notification', 'contents' => true]
+    ];
 
     $uploadUrl = sprintf('https://api.telegram.org/bot%s/sendAudio', $botToken);
     $client = new GuzzleHttp\Client();
