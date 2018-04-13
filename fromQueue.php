@@ -173,6 +173,50 @@ function handleForAll(string $filePath, string $downloadUrl, array $storageList,
     }
 }
 
+function changeId3(string $filePath, array $tags)
+{
+    $TaggingFormat = 'UTF-8';
+
+    // Initialize getID3 engine
+    $getID3 = new getID3;
+    $getID3->setOption(array('encoding'=>$TaggingFormat));
+
+    $thisFileInfo = $getID3->analyze($filePath);
+
+    getid3_lib::IncludeDependency(GETID3_INCLUDEPATH.'write.php', __FILE__, true);
+
+    $existFormats = array_keys($thisFileInfo['tags']);
+
+    foreach ($existFormats as $format) {
+        $tagwriter = new getid3_writetags;
+        $tagwriter->filename = $filePath;
+
+        if ($format === 'id3v2') {
+            $tagwriter->tagformats = array($format.".4");
+        } else {
+            $tagwriter->tagformats = array($format);
+        }
+
+        $tagwriter->tag_encoding = $thisFileInfo[$format]['encoding'];
+        $tagwriter->remove_other_tags = false;
+
+        $tagData = [];
+
+        foreach ($thisFileInfo[$format]['comments'] as $key => $tag) {
+            if (array_key_exists($key, $tags)) {
+                $tagData[$key][] = $tags[$key];
+            } else {
+                $tagData[$key][] = $tag;
+            }
+
+        }
+
+        $tagwriter->tag_data = $tagData;
+
+        $tagwriter->WriteTags();
+    }
+}
+
 $callback = function (AMQPMessage $message) use ($storageList, $botToken) {
     var_dump('download');
 
