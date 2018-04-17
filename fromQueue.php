@@ -20,14 +20,14 @@ $amqpConnectSettings = [
 ];
 
 $databaseCredentials = [
-    'driver'    => getenv('DB_DRIVER'),
-    'host'      => getenv('DB_HOST'),
-    'database'  => getenv('DB_DATABASE'),
-    'username'  => getenv('DB_USERNAME'),
-    'password'  => getenv('DB_PASSWORD'),
-    'charset'   => getenv('DB_CHARSET'),
+    'driver' => getenv('DB_DRIVER'),
+    'host' => getenv('DB_HOST'),
+    'database' => getenv('DB_DATABASE'),
+    'username' => getenv('DB_USERNAME'),
+    'password' => getenv('DB_PASSWORD'),
+    'charset' => getenv('DB_CHARSET'),
     'collation' => getenv('DB_COLLATION'),
-    'prefix'    => '',
+    'prefix' => '',
 ];
 
 
@@ -37,7 +37,7 @@ $capsule->addConnection($databaseCredentials);
 $capsule->setAsGlobal();
 $capsule->bootEloquent();
 
-$storageList =  Capsule::table('storage')->where('id', '<', 100)->get()->toArray();
+$storageList = Capsule::table('storage')->where('id', '<', 100)->get()->toArray();
 
 /**
  * @param string $basePath
@@ -67,7 +67,9 @@ function save2folder(string $filePath, string $downloadUrl)
     fclose($handle);
 
     return true;
-};
+}
+
+;
 
 
 /**
@@ -75,12 +77,13 @@ function save2folder(string $filePath, string $downloadUrl)
  * @param string $downloadUrl
  * @return int
  */
-function createStorageDownload(stdClass $storage, string $downloadUrl) {
+function createStorageDownload(stdClass $storage, string $downloadUrl)
+{
     $downloadUrlRow = Capsule::table('storage_download_url')->where('url', $downloadUrl)->first(['id']);
 
     if ($downloadUrlRow) {
         $downloadUrlRowId = $downloadUrlRow->id;
-    } else  {
+    } else {
         $downloadUrlRowId = Capsule::table('storage_download_url')->insertGetId(['url' => $downloadUrl]);
     }
 
@@ -89,14 +92,17 @@ function createStorageDownload(stdClass $storage, string $downloadUrl) {
         'download_url_id' => $downloadUrlRowId
     ];
     return Capsule::table('storage_download')->insertGetId($data);
-};
+}
+
+;
 
 /**
  * @param stdClass $storage
  * @param array $uploadResult
  * @return int
  */
-function createStorageDownloadResult(stdClass $storage, array $uploadResult) {
+function createStorageDownloadResult(stdClass $storage, array $uploadResult)
+{
     $performer = $uploadResult['result']['audio']['performer'] ?? DEFAULT_ARTIST;
     $title = $uploadResult['result']['audio']['title'] ?? DEFAULT_TITLE;
 
@@ -108,13 +114,16 @@ function createStorageDownloadResult(stdClass $storage, array $uploadResult) {
         'performer' => mb_strtolower($performer),
     ];
     return Capsule::table('storage_download_result')->insertGetId($data);
-};
+}
+
+;
 
 /**
  * @param int $storageDownloadId
  * @param int $storageDownloadResultId
  */
-function attachStorageDownloadResultToStorageDownload(int $storageDownloadId, int $storageDownloadResultId) {
+function attachStorageDownloadResultToStorageDownload(int $storageDownloadId, int $storageDownloadResultId)
+{
     Capsule::table('storage_download')->where('id', $storageDownloadId)->update(['storage_result_id' => $storageDownloadResultId]);
 }
 
@@ -132,7 +141,7 @@ function upload(string $filePath, stdClass $storage, string $botToken)
         ['name' => 'chat_id', 'contents' => $storage->name],
         ['name' => 'audio', 'contents' => fopen($filePath, 'r')],
         ['name' => 'disable_notification', 'contents' => true]
-        ]
+    ]
     ];
 
     $uploadUrl = sprintf('https://api.telegram.org/bot%s/sendAudio', $botToken);
@@ -179,7 +188,7 @@ function handleForAll(string $filePath, string $downloadUrl, array $storageList,
 function selectID3TagVersion($tagFormat)
 {
     if ($tagFormat === 'id3v2') {
-        return array($tagFormat.".4");
+        return array($tagFormat . ".4");
     } else {
         return array($tagFormat);
     }
@@ -187,39 +196,43 @@ function selectID3TagVersion($tagFormat)
 
 function changeId3(string $filePath, array $tags)
 {
-    $TaggingFormat = 'UTF-8';
+    try {
+        $TaggingFormat = 'UTF-8';
 
-    // Initialize getID3 engine
-    $getID3 = new getID3;
-    $getID3->setOption(array('encoding'=>$TaggingFormat));
+        // Initialize getID3 engine
+        $getID3 = new getID3;
+        $getID3->setOption(array('encoding' => $TaggingFormat));
 
-    $thisFileInfo = $getID3->analyze($filePath);
+        $thisFileInfo = $getID3->analyze($filePath);
 
-    getid3_lib::IncludeDependency(GETID3_INCLUDEPATH.'write.php', __FILE__, true);
+        getid3_lib::IncludeDependency(GETID3_INCLUDEPATH . 'write.php', __FILE__, true);
 
-    $existFormats = array_keys($thisFileInfo['tags']);
+        $existFormats = array_keys($thisFileInfo['tags']);
 
-    foreach ($existFormats as $format) {
+        foreach ($existFormats as $format) {
 
-        $tagwriter = new getid3_writetags;
+            $tagwriter = new getid3_writetags;
 
-        $tagwriter->filename = $filePath;
-        $tagwriter->tagformats = selectID3TagVersion($format);
+            $tagwriter->filename = $filePath;
+            $tagwriter->tagformats = selectID3TagVersion($format);
 
-        $tagwriter->overwrite_tags    = true;
-        $tagwriter->remove_other_tags = true;
-        $tagwriter->tag_encoding = $thisFileInfo[$format]['encoding'];
+            $tagwriter->overwrite_tags = true;
+            $tagwriter->remove_other_tags = true;
+            $tagwriter->tag_encoding = $thisFileInfo[$format]['encoding'];
 
-        $title = isset($thisFileInfo[$format]['comments']['title']) ? $thisFileInfo[$format]['comments']['title'] : ['unknown artist'];
-        $artist = isset($thisFileInfo[$format]['comments']['artist']) ? $thisFileInfo[$format]['comments']['artist'] : ['unknown track'];
+            $title = isset($thisFileInfo[$format]['comments']['title']) ? $thisFileInfo[$format]['comments']['title'] : ['unknown artist'];
+            $artist = isset($thisFileInfo[$format]['comments']['artist']) ? $thisFileInfo[$format]['comments']['artist'] : ['unknown track'];
 
-        $tagData = $tags;
-        $tagData['title'] = $title;
-        $tagData['artist'] = $artist;
+            $tagData = $tags;
+            $tagData['title'] = $title;
+            $tagData['artist'] = $artist;
 
-        $tagwriter->tag_data = $tagData;
+            $tagwriter->tag_data = $tagData;
 
-        $tagwriter->WriteTags();
+            $tagwriter->WriteTags();
+        }
+    } catch (Exception $exception) {
+        var_dump($exception->getMessage());
     }
 }
 
