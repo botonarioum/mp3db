@@ -151,6 +151,9 @@ function handle(stdClass $storage, string $filePath, string $downloadUrl, string
     // Save file to local folder
     save2folder($filePath, $downloadUrl);
 
+    // Change Id3
+    changeId3($filePath, ['album' => ['botonarioum.com'], 'comment' => ['Botonarioum - the largest catalog of bots']]);
+
     // Upload to storage
     $uploadResult = upload($filePath, $storage, $botToken);
 
@@ -173,6 +176,15 @@ function handleForAll(string $filePath, string $downloadUrl, array $storageList,
     }
 }
 
+function selectID3TagVersion($tagFormat)
+{
+    if ($tagFormat === 'id3v2') {
+        return array($tagFormat.".4");
+    } else {
+        return array($tagFormat);
+    }
+}
+
 function changeId3(string $filePath, array $tags)
 {
     $TaggingFormat = 'UTF-8';
@@ -188,28 +200,22 @@ function changeId3(string $filePath, array $tags)
     $existFormats = array_keys($thisFileInfo['tags']);
 
     foreach ($existFormats as $format) {
+
         $tagwriter = new getid3_writetags;
+
         $tagwriter->filename = $filePath;
+        $tagwriter->tagformats = selectID3TagVersion($format);
 
-        if ($format === 'id3v2') {
-            $tagwriter->tagformats = array($format.".4");
-        } else {
-            $tagwriter->tagformats = array($format);
-        }
-
+        $tagwriter->overwrite_tags    = true;
+        $tagwriter->remove_other_tags = true;
         $tagwriter->tag_encoding = $thisFileInfo[$format]['encoding'];
-        $tagwriter->remove_other_tags = false;
 
-        $tagData = [];
+        $title = isset($thisFileInfo[$format]['comments']['title']) ? $thisFileInfo[$format]['comments']['title'] : ['unknown artist'];
+        $artist = isset($thisFileInfo[$format]['comments']['artist']) ? $thisFileInfo[$format]['comments']['artist'] : ['unknown track'];
 
-        foreach ($thisFileInfo[$format]['comments'] as $key => $tag) {
-            if (array_key_exists($key, $tags)) {
-                $tagData[$key][] = $tags[$key];
-            } else {
-                $tagData[$key][] = $tag;
-            }
-
-        }
+        $tagData = $tags;
+        $tagData['title'] = $title;
+        $tagData['artist'] = $artist;
 
         $tagwriter->tag_data = $tagData;
 
@@ -244,4 +250,3 @@ while (count($channel->callbacks)) {
 
 $channel->close();
 $connection->close();
-
