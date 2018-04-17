@@ -220,8 +220,28 @@ function changeId3(string $filePath, array $tags)
             $tagwriter->remove_other_tags = true;
             $tagwriter->tag_encoding = $thisFileInfo[$format]['encoding'];
 
-            $title = isset($thisFileInfo[$format]['comments']['title']) ? $thisFileInfo[$format]['comments']['title'] : ['unknown artist'];
-            $artist = isset($thisFileInfo[$format]['comments']['artist']) ? $thisFileInfo[$format]['comments']['artist'] : ['unknown track'];
+            $titles= isset($thisFileInfo[$format]['comments']['title']) ? $thisFileInfo[$format]['comments']['title'] : [];
+            $title = reset($titles);
+
+            if ($title) {
+                $title = strtolower($title);
+                $title = str_replace('zaycev.net', 'botonarioum.com', $title);
+            } else {
+                $title = 'unknown track';
+            }
+
+//            unknown artist
+//            unknown track
+
+            $artists = isset($thisFileInfo[$format]['comments']['artist']) ? $thisFileInfo[$format]['comments']['artist'] : [];
+            $artist = reset($artists);
+
+            if ($artist) {
+                $artist = strtolower($title);
+                $artist = str_replace('zaycev.net', 'botonarioum.com', $artist);
+            } else {
+                $artist = 'unknown artist';
+            }
 
             $tagData = $tags;
             $tagData['title'] = $title;
