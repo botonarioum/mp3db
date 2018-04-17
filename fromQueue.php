@@ -244,8 +244,8 @@ function changeId3(string $filePath, array $tags)
             }
 
             $tagData = $tags;
-            $tagData['title'] = $title;
-            $tagData['artist'] = $artist;
+            $tagData['title'] = [$title];
+            $tagData['artist'] = [$artist];
 
             $tagwriter->tag_data = $tagData;
 
