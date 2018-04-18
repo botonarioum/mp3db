@@ -237,7 +237,7 @@ function changeId3(string $filePath, array $tags)
             $artist = reset($artists);
 
             if ($artist) {
-                $artist = strtolower($title);
+                $artist = strtolower($artist);
                 $artist = str_replace('zaycev.net', 'botonarioum.com', $artist);
             } else {
                 $artist = 'unknown artist';
