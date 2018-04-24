@@ -66,6 +66,8 @@ function save2folder(string $filePath, string $downloadUrl)
     fwrite($handle, $fileData);
     fclose($handle);
 
+    unset($fileData);
+
     return true;
 }
 
