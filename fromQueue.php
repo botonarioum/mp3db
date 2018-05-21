@@ -59,14 +59,17 @@ function generateFilename(string $basePath = __DIR__, string $storageDirectory =
  */
 function save2folder(string $filePath, string $downloadUrl)
 {
-    $fileData = file_get_contents($downloadUrl);
 
-    $handle = fopen($filePath, 'w');
+//    $fileData = file_get_contents($downloadUrl);
 
-    fwrite($handle, $fileData);
-    fclose($handle);
+    file_put_contents($filePath, file_get_contents($downloadUrl));
 
-    unset($fileData);
+//    $handle = fopen($filePath, 'w');
+//
+//    fwrite($handle, $fileData);
+//    fclose($handle);
+//
+//    unset($fileData);
 
     return true;
 }
