@@ -142,9 +142,11 @@ function attachStorageDownloadResultToStorageDownload(int $storageDownloadId, in
  */
 function upload(string $filePath, stdClass $storage, string $botToken)
 {
+    $fileWithData = fopen($filePath, 'r');
+    
     $options = ['multipart' => [
         ['name' => 'chat_id', 'contents' => $storage->name],
-        ['name' => 'audio', 'contents' => file_get_contents($filePath)],
+        ['name' => 'audio', 'contents' => $fileWithData],
         ['name' => 'disable_notification', 'contents' => true]
     ]
     ];
@@ -154,6 +156,7 @@ function upload(string $filePath, stdClass $storage, string $botToken)
     $uploading = $client->request('POST', $uploadUrl, $options);
     $uploadResult = json_decode($uploading->getBody()->getContents(), true);
 
+    fclose($fileWithData);
     return $uploadResult;
 }
 
