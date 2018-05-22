@@ -144,7 +144,7 @@ function upload(string $filePath, stdClass $storage, string $botToken)
 {
     $options = ['multipart' => [
         ['name' => 'chat_id', 'contents' => $storage->name],
-        ['name' => 'audio', 'contents' => fopen($filePath, 'r')],
+        ['name' => 'audio', 'contents' => file_get_contents($filePath)],
         ['name' => 'disable_notification', 'contents' => true]
     ]
     ];
