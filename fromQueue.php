@@ -152,8 +152,8 @@ function upload(string $filePath, stdClass $storage, string $botToken)
     ];
 
     $uploadUrl = sprintf('https://api.telegram.org/bot%s/sendAudio', $botToken);
-    $client = new GuzzleHttp\Client();
-    $uploading = $client->request('POST', $uploadUrl, $options);
+    // $client = (new GuzzleHttp\Client());
+    $uploading = (new GuzzleHttp\Client())->request('POST', $uploadUrl, $options);
     $uploadResult = json_decode($uploading->getBody()->getContents(), true);
 
     fclose($fileWithData);
