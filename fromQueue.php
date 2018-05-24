@@ -214,6 +214,8 @@ function changeId3(string $filePath, array $tags)
 
         $thisFileInfo = $getID3->analyze($filePath);
 
+        var_dump('PATH:::' . filePath);
+
         getid3_lib::IncludeDependency(GETID3_INCLUDEPATH . 'write.php', __FILE__, true);
 
         $existFormats = array_keys($thisFileInfo['tags']);
