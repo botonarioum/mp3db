@@ -143,11 +143,11 @@ function attachStorageDownloadResultToStorageDownload(int $storageDownloadId, in
  */
 function upload(string $filePath, stdClass $storage, string $botToken)
 {
-    $fileWithData = fopen($filePath, 'r');
+    // $fileWithData = fopen($filePath, 'r');
     
     $options = ['multipart' => [
         ['name' => 'chat_id', 'contents' => $storage->name],
-        ['name' => 'audio', 'contents' => $fileWithData],
+        ['name' => 'audio', 'contents' => file_get_contents(filePath)],
         ['name' => 'disable_notification', 'contents' => true]
     ]
     ];
@@ -157,7 +157,7 @@ function upload(string $filePath, stdClass $storage, string $botToken)
     $uploading = (new GuzzleHttp\Client())->request('POST', $uploadUrl, $options);
     $uploadResult = json_decode($uploading->getBody()->getContents(), true);
 
-    fclose($fileWithData);
+    // fclose($fileWithData);
     return $uploadResult;
 }
 
