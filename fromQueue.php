@@ -65,9 +65,9 @@ function save2folder(string $filePath, string $downloadUrl)
 
     // file_put_contents($filePath, file_get_contents($downloadUrl));
 
-   $handle = fopen($file_get_contents($downloadUrl), 'w');
+   $handle = fopen($filePath, 'w');
 //
-   fwrite($handle, $fileData);
+   fwrite($handle, $file_get_contents($downloadUrl));
    fclose($handle);
 //
 //    unset($fileData);
