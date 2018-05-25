@@ -72,9 +72,6 @@ function save2folder(string $filePath, string $downloadUrl)
     return true;
 }
 
-;
-
-
 /**
  * @param stdClass $storage
  * @param string $downloadUrl
