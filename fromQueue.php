@@ -53,105 +53,6 @@ function generateFilename(string $basePath = __DIR__, string $storageDirectory =
     return sprintf('%s/%s/%s.%s', $basePath, $storageDirectory, $fileName, $fileExtension);
 }
 
-/**
- * @param string $filePath
- * @param string $downloadUrl
- * @return bool
- */
-function save2folder(string $filePath, string $downloadUrl)
-{
-    $fileData = file_get_contents($downloadUrl);
-
-    $handle = fopen($filePath, 'w');
-
-    fwrite($handle, $fileData);
-    fclose($handle);
-
-    unset($fileData);
-
-    return true;
-}
-
-/**
- * @param stdClass $storage
- * @param string $downloadUrl
- * @return int
- */
-function createStorageDownload(stdClass $storage, string $downloadUrl)
-{
-    $downloadUrlRow = Capsule::table('storage_download_url')->where('url', $downloadUrl)->first(['id']);
-
-    if ($downloadUrlRow) {
-        $downloadUrlRowId = $downloadUrlRow->id;
-    } else {
-        $downloadUrlRowId = Capsule::table('storage_download_url')->insertGetId(['url' => $downloadUrl]);
-    }
-
-    $data = [
-        'storage_id' => $storage->id,
-        'download_url_id' => $downloadUrlRowId
-    ];
-    return Capsule::table('storage_download')->insertGetId($data);
-}
-
-;
-
-/**
- * @param stdClass $storage
- * @param array $uploadResult
- * @return int
- */
-function createStorageDownloadResult(stdClass $storage, array $uploadResult)
-{
-    $performer = $uploadResult['result']['audio']['performer'] ?? DEFAULT_ARTIST;
-    $title = $uploadResult['result']['audio']['title'] ?? DEFAULT_TITLE;
-
-    $data = [
-        'storage_id' => $storage->id,
-        'message_id' => $uploadResult['result']['message_id'],
-        'file_id' => $uploadResult['result']['audio']['file_id'],
-        'title' => mb_strtolower($title),
-        'performer' => mb_strtolower($performer),
-    ];
-    return Capsule::table('storage_download_result')->insertGetId($data);
-}
-
-;
-
-/**
- * @param int $storageDownloadId
- * @param int $storageDownloadResultId
- */
-function attachStorageDownloadResultToStorageDownload(int $storageDownloadId, int $storageDownloadResultId)
-{
-    Capsule::table('storage_download')->where('id', $storageDownloadId)->update(['storage_result_id' => $storageDownloadResultId]);
-}
-
-
-/**
- * @param string $filePath
- * @param stdClass $storage
- * @param string $botToken
- * @return mixed
- * @throws \GuzzleHttp\Exception\GuzzleException
- */
-function upload(string $filePath, stdClass $storage, string $botToken)
-{
-    $options = ['multipart' => [
-        ['name' => 'chat_id', 'contents' => $storage->name],
-        ['name' => 'audio', 'contents' => fopen($filePath, 'r')],
-        ['name' => 'disable_notification', 'contents' => true]
-    ]
-    ];
-
-    $uploadUrl = sprintf('https://api.telegram.org/bot%s/sendAudio', $botToken);
-    $client = new GuzzleHttp\Client();
-    $uploading = $client->request('POST', $uploadUrl, $options);
-    $uploadResult = json_decode($uploading->getBody()->getContents(), true);
-
-    return $uploadResult;
-}
-
 function handle(stdClass $storage, string $filePath, string $downloadUrl, string $botToken)
 {
     // Create new download row
@@ -174,6 +75,16 @@ function handle(stdClass $storage, string $filePath, string $downloadUrl, string
 
 }
 
+$processor = (new Processor())
+    ->addPipe(new CreateStorageDownloadPipe())
+    ->addPipe(new Save2folderPipe())
+    ->addPipe(new ChangeId3TagsPipe())
+    ->addPipe(new UploadPipe())
+    ->addPipe(new CreateStorageDownloadResultPipe())
+    ->addPipe(new AttachStorageDownloadResultToStorageDownloadPipe());
+
+$processor->process(new Task('http://example.com'));
+
 function handleForAll(string $filePath, string $downloadUrl, array $storageList, string $botToken)
 {
     foreach ($storageList as $storage) {
@@ -191,68 +102,6 @@ function selectID3TagVersion($tagFormat)
         return array($tagFormat . ".4");
     } else {
         return array($tagFormat);
-    }
-}
-
-function changeId3(string $filePath, array $tags)
-{
-    try {
-        $TaggingFormat = 'UTF-8';
-
-        // Initialize getID3 engine
-        $getID3 = new getID3;
-        $getID3->setOption(array('encoding' => $TaggingFormat));
-
-        $thisFileInfo = $getID3->analyze($filePath);
-
-        getid3_lib::IncludeDependency(GETID3_INCLUDEPATH . 'write.php', __FILE__, true);
-
-        $existFormats = array_keys($thisFileInfo['tags']);
-
-        foreach ($existFormats as $format) {
-
-            $tagwriter = new getid3_writetags;
-
-            $tagwriter->filename = $filePath;
-            $tagwriter->tagformats = selectID3TagVersion($format);
-
-            $tagwriter->overwrite_tags = true;
-            $tagwriter->remove_other_tags = true;
-            $tagwriter->tag_encoding = $thisFileInfo[$format]['encoding'];
-
-            $titles= isset($thisFileInfo[$format]['comments']['title']) ? $thisFileInfo[$format]['comments']['title'] : [];
-            $title = reset($titles);
-
-            if ($title) {
-                $title = strtolower($title);
-                $title = str_replace('zaycev.net', 'botonarioum.com', $title);
-            } else {
-                $title = 'unknown track';
-            }
-
-//            unknown artist
-//            unknown track
-
-            $artists = isset($thisFileInfo[$format]['comments']['artist']) ? $thisFileInfo[$format]['comments']['artist'] : [];
-            $artist = reset($artists);
-
-            if ($artist) {
-                $artist = strtolower($artist);
-                $artist = str_replace('zaycev.net', 'botonarioum.com', $artist);
-            } else {
-                $artist = 'unknown artist';
-            }
-
-            $tagData = $tags;
-            $tagData['title'] = [$title];
-            $tagData['artist'] = [$artist];
-
-            $tagwriter->tag_data = $tagData;
-
-            $tagwriter->WriteTags();
-        }
-    } catch (Exception $exception) {
-        var_dump($exception->getMessage());
     }
 }
 
