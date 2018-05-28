@@ -119,8 +119,6 @@ function createStorageDownloadResult(stdClass $storage, array $uploadResult)
     return Capsule::table('storage_download_result')->insertGetId($data);
 }
 
-;
-
 /**
  * @param int $storageDownloadId
  * @param int $storageDownloadResultId
@@ -197,9 +195,12 @@ function selectID3TagVersion($tagFormat)
     }
 }
 
-function changeId3(string $filePath, array $tags)
+function changeId3(string $fileName, array $tags)
 {
     try {
+
+        $filePath = __DIR__ .'/downloads/'. $fileName;
+
         $TaggingFormat = 'UTF-8';
 
         // Initialize getID3 engine
