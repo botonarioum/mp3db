@@ -72,8 +72,6 @@ function save2folder(string $filePath, string $downloadUrl)
     return true;
 }
 
-;
-
 
 /**
  * @param stdClass $storage
@@ -197,9 +195,11 @@ function selectID3TagVersion($tagFormat)
     }
 }
 
-function changeId3(string $filePath, array $tags)
+function changeId3(string $fileName, array $tags)
 {
     try {
+        $filePath = __DIR__ .'/downloads/'. $fileName;
+
         $TaggingFormat = 'UTF-8';
 
         // Initialize getID3 engine
