@@ -1,21 +1,24 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: lov3catch
- * Date: 25.05.18
- * Time: 23:18
- */
 
-class AttachStorageDownloadResultToStorageDownloadPipe
+namespace Pipes;
+
+use Illuminate\Database\Capsule\Manager as Capsule;
+use Task\Task;
+
+class AttachStorageDownloadResultToStorageDownloadPipe implements PipeInterface
 {
+    public function __invoke(Task $task): Task
+    {
+        $this->process($task);
 
-}
+        return $task;
+    }
 
-/**
- * @param int $storageDownloadId
- * @param int $storageDownloadResultId
- */
-function attachStorageDownloadResultToStorageDownload(int $storageDownloadId, int $storageDownloadResultId)
-{
-    Capsule::table('storage_download')->where('id', $storageDownloadId)->update(['storage_result_id' => $storageDownloadResultId]);
+    public function process(Task $task)
+    {
+        $storageDownloadId = $task->getDownloadRowId();
+        $storageDownloadResultId = $task->getDownloadResultRowId();
+
+        Capsule::table('storage_download')->where('id', $storageDownloadId)->update(['storage_result_id' => $storageDownloadResultId]);
+    }
 }

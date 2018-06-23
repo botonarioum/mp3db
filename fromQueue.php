@@ -1,11 +1,29 @@
-<?php
+<?php declare(strict_types=1);
+
+ini_set('memory_limit', '-1');
 
 require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/Task/Task.php';
 require __DIR__ . '/Entities/Storage.php';
+require __DIR__ . '/Pipes/PipeInterface.php';
+require __DIR__ . '/Pipes/AttachStorageDownloadResultToStorageDownloadPipe.php';
+require __DIR__ . '/Pipes/CreateStorageDownloadPipe.php';
+require __DIR__ . '/Pipes/CreateStorageDownloadResultPipe.php';
+require __DIR__ . '/Pipes/Save2folderPipe.php';
+require __DIR__ . '/Pipes/ChangeId3TagsPipe.php';
+require __DIR__ . '/Pipes/UploadPipe.php';
 
+use League\Pipeline\Pipeline;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use Task\Task;
+use Pipes\CreateStorageDownloadPipe;
+use Pipes\CreateStorageDownloadResultPipe;
+use Pipes\Save2folderpipe;
+use Pipes\ChangeId3TagsPipe;
+use Pipes\UploadPipe;
+use Pipes\AttachStorageDownloadResultToStorageDownloadPipe;
 
 define('DEFAULT_TITLE', 'unknown track');
 define('DEFAULT_ARTIST', 'unknown artist');
@@ -30,15 +48,12 @@ $databaseCredentials = [
     'prefix' => '',
 ];
 
-ini_set('memory_limit', '-1');
-
 $capsule = new Capsule;
-
 $capsule->addConnection($databaseCredentials);
 $capsule->setAsGlobal();
 $capsule->bootEloquent();
 
-$storageList = Capsule::table('storage')->where('id', '<', 100)->get()->toArray();
+$storageList = Capsule::table('storage')->get()->toArray();
 
 /**
  * @param string $basePath
@@ -53,70 +68,65 @@ function generateFilename(string $basePath = __DIR__, string $storageDirectory =
     return sprintf('%s/%s/%s.%s', $basePath, $storageDirectory, $fileName, $fileExtension);
 }
 
-function handle(stdClass $storage, string $filePath, string $downloadUrl, string $botToken)
-{
-    // Create new download row
-    $downloadRowId = createStorageDownload($storage, $downloadUrl);
+//function handle(stdClass $storage, string $filePath, string $downloadUrl, string $botToken)
+//{
+//    // Create new download row
+//    $downloadRowId = createStorageDownload($storage, $downloadUrl);
+//
+//    // Save file to local folder
+//    save2folder($filePath, $downloadUrl);
+//
+//    // Change Id3
+//    changeId3($filePath, ['album' => ['botonarioum.com'], 'comment' => ['Botonarioum - the largest catalog of bots']]);
+//
+//    // Upload to storage
+//    $uploadResult = upload($filePath, $storage, $botToken);
+//
+//    // Create new download result row
+//    $downloadResultRowId = createStorageDownloadResult($storage, $uploadResult);
+//
+//    // Attach result row to download row
+//    attachStorageDownloadResultToStorageDownload($downloadRowId, $downloadResultRowId);
+//}
 
-    // Save file to local folder
-    save2folder($filePath, $downloadUrl);
+$createStorageDownloadPipe = (new CreateStorageDownloadPipe);
+$save2folderPipe = (new Save2folderPipe);
+$changeId3TagsPipe = (new ChangeId3TagsPipe);
+$uploadPipe = (new UploadPipe);
+$createStorageDownloadResultPipe = (new CreateStorageDownloadResultPipe);
+$attachStorageDownloadResultToStorageDownloadPipe = (new AttachStorageDownloadResultToStorageDownloadPipe);
 
-    // Change Id3
-    changeId3($filePath, ['album' => ['botonarioum.com'], 'comment' => ['Botonarioum - the largest catalog of bots']]);
+$pipeline = (new Pipeline)
+    ->pipe($createStorageDownloadPipe)
+    ->pipe($save2folderPipe)
+    ->pipe($changeId3TagsPipe)
+    ->pipe($uploadPipe)
+    ->pipe($createStorageDownloadResultPipe)
+    ->pipe($attachStorageDownloadResultToStorageDownloadPipe);
 
-    // Upload to storage
-    $uploadResult = upload($filePath, $storage, $botToken);
+//$pipeline->process(new Task('http://example.com'));
 
-    // Create new download result row
-    $downloadResultRowId = createStorageDownloadResult($storage, $uploadResult);
-
-    // Attach result row to download row
-    attachStorageDownloadResultToStorageDownload($downloadRowId, $downloadResultRowId);
-
-}
-
-$processor = (new Processor())
-    ->addPipe(new CreateStorageDownloadPipe())
-    ->addPipe(new Save2folderPipe())
-    ->addPipe(new ChangeId3TagsPipe())
-    ->addPipe(new UploadPipe())
-    ->addPipe(new CreateStorageDownloadResultPipe())
-    ->addPipe(new AttachStorageDownloadResultToStorageDownloadPipe());
-
-$processor->process(new Task('http://example.com'));
-
-function handleForAll(string $filePath, string $downloadUrl, array $storageList, string $botToken)
+function handleForAll(string $filePath, string $downloadUrl, array $storageList, string $botToken, $pipeline)
 {
     foreach ($storageList as $storage) {
+        $task = new Task($downloadUrl, $filePath, $storage, $botToken);
         try {
-            handle($storage, $filePath, $downloadUrl, $botToken);
+            $pipeline->process($task);
         } catch (Exception $exception) {
             var_dump($exception->getMessage());
         }
     }
 }
 
-function selectID3TagVersion($tagFormat)
-{
-    if ($tagFormat === 'id3v2') {
-        return array($tagFormat . ".4");
-    } else {
-        return array($tagFormat);
-    }
-}
-
-$callback = function (AMQPMessage $message) use ($storageList, $botToken) {
-    var_dump('download');
-
+$callback = function (AMQPMessage $message) use ($storageList, $botToken, $pipeline) {
     $payload = json_decode($message->getBody(), true);
     $downloadUrl = $payload['payload']['url'];
 
     $fileName = generateFilename();
 
     var_dump('Start handle');
-    handleForAll($fileName, $downloadUrl, $storageList, $botToken);
+    handleForAll($fileName, $downloadUrl, $storageList, $botToken, $pipeline);
     var_dump('Finish handle');
-    unlink($fileName);
 };
 
 $url = parse_url(getenv('CLOUDAMQP_URL'));

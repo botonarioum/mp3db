@@ -1,74 +1,102 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: lov3catch
- * Date: 25.05.18
- * Time: 23:16
- */
 
-class ChangeId3TagsPipe
+namespace Pipes;
+
+use Exception;
+use getID3;
+use getid3_lib;
+use getid3_writetags;
+use Task\Task;
+
+class ChangeId3TagsPipe implements PipeInterface
 {
+    const TAGS = ['album' => ['botonarioum.com'], 'comment' => ['Botonarioum - the largest catalog of bots']];
 
-}
+    const DEFAULT_TITLE = 'unknown track';
 
-function changeId3(string $filePath, array $tags)
-{
-    try {
-        $TaggingFormat = 'UTF-8';
+    const DEFAULT_ARTIST = 'unknown artist';
 
-        // Initialize getID3 engine
-        $getID3 = new getID3;
-        $getID3->setOption(array('encoding' => $TaggingFormat));
+    public function __invoke(Task $task): Task
+    {
+        $this->process($task);
 
-        $thisFileInfo = $getID3->analyze($filePath);
+        return $task;
+    }
 
-        getid3_lib::IncludeDependency(GETID3_INCLUDEPATH . 'write.php', __FILE__, true);
+    public function process(Task $task)
+    {
+        $filePath = $task->getFilePath();
 
-        $existFormats = array_keys($thisFileInfo['tags']);
+        $this->changeId3($filePath, self::TAGS);
 
-        foreach ($existFormats as $format) {
+        // TODO: Implement process() method.
+    }
 
-            $tagwriter = new getid3_writetags;
+    private function changeId3(string $filePath, array $tags)
+    {
+        try {
+            $TaggingFormat = 'UTF-8';
 
-            $tagwriter->filename = $filePath;
-            $tagwriter->tagformats = selectID3TagVersion($format);
+            // Initialize getID3 engine
+            $getID3 = new getID3;
+            $getID3->setOption(array('encoding' => $TaggingFormat));
 
-            $tagwriter->overwrite_tags = true;
-            $tagwriter->remove_other_tags = true;
-            $tagwriter->tag_encoding = $thisFileInfo[$format]['encoding'];
+            $thisFileInfo = $getID3->analyze($filePath);
 
-            $titles= isset($thisFileInfo[$format]['comments']['title']) ? $thisFileInfo[$format]['comments']['title'] : [];
-            $title = reset($titles);
+            getid3_lib::IncludeDependency(GETID3_INCLUDEPATH . 'write.php', __FILE__, true);
 
-            if ($title) {
-                $title = strtolower($title);
-                $title = str_replace('zaycev.net', 'botonarioum.com', $title);
-            } else {
-                $title = 'unknown track';
+            $existFormats = array_keys($thisFileInfo['tags']);
+
+            foreach ($existFormats as $format) {
+
+                $tagwriter = new getid3_writetags;
+
+                $tagwriter->filename = $filePath;
+                $tagwriter->tagformats = $this->selectID3TagVersion($format);
+
+                $tagwriter->overwrite_tags = true;
+                $tagwriter->remove_other_tags = true;
+                $tagwriter->tag_encoding = $thisFileInfo[$format]['encoding'];
+
+                $titles = isset($thisFileInfo[$format]['comments']['title']) ? $thisFileInfo[$format]['comments']['title'] : [];
+                $title = reset($titles);
+
+                if ($title) {
+                    $title = strtolower($title);
+                    $title = str_replace('zaycev.net', 'botonarioum.com', $title);
+                } else {
+                    $title = self::DEFAULT_TITLE;
+                }
+
+                $artists = isset($thisFileInfo[$format]['comments']['artist']) ? $thisFileInfo[$format]['comments']['artist'] : [];
+                $artist = reset($artists);
+
+                if ($artist) {
+                    $artist = strtolower($artist);
+                    $artist = str_replace('zaycev.net', 'botonarioum.com', $artist);
+                } else {
+                    $artist = self::DEFAULT_ARTIST;
+                }
+
+                $tagData = $tags;
+                $tagData['title'] = [$title];
+                $tagData['artist'] = [$artist];
+
+                $tagwriter->tag_data = $tagData;
+
+                $tagwriter->WriteTags();
             }
-
-//            unknown artist
-//            unknown track
-
-            $artists = isset($thisFileInfo[$format]['comments']['artist']) ? $thisFileInfo[$format]['comments']['artist'] : [];
-            $artist = reset($artists);
-
-            if ($artist) {
-                $artist = strtolower($artist);
-                $artist = str_replace('zaycev.net', 'botonarioum.com', $artist);
-            } else {
-                $artist = 'unknown artist';
-            }
-
-            $tagData = $tags;
-            $tagData['title'] = [$title];
-            $tagData['artist'] = [$artist];
-
-            $tagwriter->tag_data = $tagData;
-
-            $tagwriter->WriteTags();
+        } catch (Exception $exception) {
+            var_dump($exception->getMessage());
         }
-    } catch (Exception $exception) {
-        var_dump($exception->getMessage());
+    }
+
+    private function selectID3TagVersion($tagFormat)
+    {
+        if ($tagFormat === 'id3v2') {
+            return array($tagFormat . ".4");
+        } else {
+            return array($tagFormat);
+        }
     }
 }

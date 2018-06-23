@@ -1,31 +1,42 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: lov3catch
- * Date: 25.05.18
- * Time: 23:15
- */
 
-class Save2folderPipe
+namespace Pipes;
+
+use Task\Task;
+
+class Save2folderPipe implements PipeInterface
 {
+    public function __invoke(Task $task): Task
+    {
+        $this->process($task);
 
-}
+        return $task;
+    }
 
-/**
- * @param string $filePath
- * @param string $downloadUrl
- * @return bool
- */
-function save2folder(string $filePath, string $downloadUrl)
-{
-    $fileData = file_get_contents($downloadUrl);
+    public function process(Task $task)
+    {
+        $filePath = $task->getFilePath();
+        $downloadUrl = $task->getDownloadUrl();
 
-    $handle = fopen($filePath, 'w');
+        $this->run($filePath, $downloadUrl);
+    }
 
-    fwrite($handle, $fileData);
-    fclose($handle);
+    /**
+     * @param string $filePath
+     * @param string $downloadUrl
+     * @return bool
+     */
+    private function run(string $filePath, string $downloadUrl)
+    {
+        $fileData = file_get_contents($downloadUrl);
 
-    unset($fileData);
+        $handle = fopen($filePath, 'w');
 
-    return true;
+        fwrite($handle, $fileData);
+        fclose($handle);
+
+        unset($fileData);
+
+        return true;
+    }
 }
