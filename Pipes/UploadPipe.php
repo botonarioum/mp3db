@@ -7,10 +7,14 @@ use GuzzleHttp;
 use stdClass;
 use Task\Task;
 
-class UploadPipe implements PipeInterface
+class UploadPipe extends AbstractPipe
 {
+    const INTRODUCE_MESSAGE = 'Upload to telegram-storage';
+
     public function __invoke(Task $task): Task
     {
+        $task = parent::__invoke($task);
+
         $this->process($task);
 
         return $task;

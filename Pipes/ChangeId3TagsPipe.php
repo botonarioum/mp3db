@@ -8,8 +8,10 @@ use getid3_lib;
 use getid3_writetags;
 use Task\Task;
 
-class ChangeId3TagsPipe implements PipeInterface
+class ChangeId3TagsPipe extends AbstractPipe
 {
+    const INTRODUCE_MESSAGE = 'Change ID3 tags';
+
     const TAGS = ['album' => ['botonarioum.com'], 'comment' => ['Botonarioum - the largest catalog of bots']];
 
     const DEFAULT_TITLE = 'unknown track';
@@ -18,6 +20,8 @@ class ChangeId3TagsPipe implements PipeInterface
 
     public function __invoke(Task $task): Task
     {
+        $task = parent::__invoke($task);
+
         $this->process($task);
 
         return $task;
@@ -87,7 +91,7 @@ class ChangeId3TagsPipe implements PipeInterface
                 $tagwriter->WriteTags();
             }
         } catch (Exception $exception) {
-            var_dump($exception->getMessage());
+            var_dump('Can not update ID3Tags');
         }
     }
 

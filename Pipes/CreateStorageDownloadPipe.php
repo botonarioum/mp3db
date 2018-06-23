@@ -6,12 +6,16 @@ use stdClass;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Task\Task;
 
-class CreateStorageDownloadPipe implements PipeInterface
+class CreateStorageDownloadPipe extends AbstractPipe
 {
+    const INTRODUCE_MESSAGE = 'Create new download row';
+
     private $tableName = 'storage_download';
 
     public function __invoke(Task $task): Task
     {
+        $task = parent::__invoke($task);
+
         $this->process($task);
 
         return $task;

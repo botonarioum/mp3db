@@ -4,10 +4,14 @@ namespace Pipes;
 
 use Task\Task;
 
-class Save2folderPipe implements PipeInterface
+class Save2folderPipe extends AbstractPipe
 {
+    const INTRODUCE_MESSAGE = 'Save file to local folder';
+
     public function __invoke(Task $task): Task
     {
+        $task = parent::__invoke($task);
+
         $this->process($task);
 
         return $task;

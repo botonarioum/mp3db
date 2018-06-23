@@ -5,10 +5,14 @@ namespace Pipes;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Task\Task;
 
-class AttachStorageDownloadResultToStorageDownloadPipe implements PipeInterface
+class AttachStorageDownloadResultToStorageDownloadPipe extends AbstractPipe
 {
+    const INTRODUCE_MESSAGE = 'Attach result row to download row';
+
     public function __invoke(Task $task): Task
     {
+        $task = parent::__invoke($task);
+
         $this->process($task);
 
         return $task;

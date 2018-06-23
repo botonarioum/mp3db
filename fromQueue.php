@@ -6,6 +6,8 @@ require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/Task/Task.php';
 require __DIR__ . '/Entities/Storage.php';
 require __DIR__ . '/Pipes/PipeInterface.php';
+require __DIR__ . '/Pipes/AbstractPipe.php';
+require __DIR__ . '/Pipes/ShowSeparatorPipe.php';
 require __DIR__ . '/Pipes/AttachStorageDownloadResultToStorageDownloadPipe.php';
 require __DIR__ . '/Pipes/CreateStorageDownloadPipe.php';
 require __DIR__ . '/Pipes/CreateStorageDownloadResultPipe.php';
@@ -18,6 +20,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use Task\Task;
+use Pipes\ShowSeparatorPipe;
 use Pipes\CreateStorageDownloadPipe;
 use Pipes\CreateStorageDownloadResultPipe;
 use Pipes\Save2folderpipe;
@@ -95,6 +98,7 @@ $changeId3TagsPipe = (new ChangeId3TagsPipe);
 $uploadPipe = (new UploadPipe);
 $createStorageDownloadResultPipe = (new CreateStorageDownloadResultPipe);
 $attachStorageDownloadResultToStorageDownloadPipe = (new AttachStorageDownloadResultToStorageDownloadPipe);
+$separatorPipe = (new ShowSeparatorPipe());
 
 $pipeline = (new Pipeline)
     ->pipe($createStorageDownloadPipe)
@@ -102,7 +106,8 @@ $pipeline = (new Pipeline)
     ->pipe($changeId3TagsPipe)
     ->pipe($uploadPipe)
     ->pipe($createStorageDownloadResultPipe)
-    ->pipe($attachStorageDownloadResultToStorageDownloadPipe);
+    ->pipe($attachStorageDownloadResultToStorageDownloadPipe)
+    ->pipe($separatorPipe);
 
 //$pipeline->process(new Task('http://example.com'));
 
@@ -113,7 +118,8 @@ function handleForAll(string $filePath, string $downloadUrl, array $storageList,
         try {
             $pipeline->process($task);
         } catch (Exception $exception) {
-            var_dump($exception->getMessage());
+            // Do not show exceptions
+            // var_dump($exception->getMessage());
         }
     }
 }
@@ -124,9 +130,7 @@ $callback = function (AMQPMessage $message) use ($storageList, $botToken, $pipel
 
     $fileName = generateFilename();
 
-    var_dump('Start handle');
     handleForAll($fileName, $downloadUrl, $storageList, $botToken, $pipeline);
-    var_dump('Finish handle');
 };
 
 $url = parse_url(getenv('CLOUDAMQP_URL'));
