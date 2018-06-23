@@ -27,6 +27,6 @@ abstract class AbstractPipe implements PipeInterface
 
     private function getIntroduceMessage(): string
     {
-        return self::INTRODUCE_MESSAGE;
+        return $this::INTRODUCE_MESSAGE;
     }
 }
