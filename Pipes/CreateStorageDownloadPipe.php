@@ -38,6 +38,7 @@ class CreateStorageDownloadPipe extends AbstractPipe
      */
     private function run(stdClass $storage, string $downloadUrl)
     {
+        // Сохраняем URL загрузки (если уже есть - получаем старый)
         $downloadUrlRow = Capsule::table('storage_download_url')->where('url', $downloadUrl)->first(['id']);
 
         if ($downloadUrlRow) {
@@ -46,10 +47,22 @@ class CreateStorageDownloadPipe extends AbstractPipe
             $downloadUrlRowId = Capsule::table('storage_download_url')->insertGetId(['url' => $downloadUrl]);
         }
 
+        // Сохраняем запись о загрузке (если уже есть - получаем старую)
         $data = [
             'storage_id' => $storage->id,
             'download_url_id' => $downloadUrlRowId
         ];
-        return Capsule::table($this->tableName)->insertGetId($data);
+
+        $storageDownloadRow = Capsule::table($this->tableName)
+            ->where('storage_id', $data['storage_id'])
+            ->where('download_url_id', $data['download_url_id'])->first(['id']);
+
+        var_dump($storageDownloadRow);
+
+        if ($storageDownloadRow) {
+            return $storageDownloadRow->id;
+        } else {
+            return Capsule::table($this->tableName)->insertGetId($data);
+        }
     }
 }
