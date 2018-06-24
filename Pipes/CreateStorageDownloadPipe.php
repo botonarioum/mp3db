@@ -54,10 +54,6 @@ class CreateStorageDownloadPipe extends AbstractPipe
         $storageDownloadRow = Capsule::table('storage_download')
             ->where('storage_id', $data['storage_id'])
             ->where('download_url_id', $data['download_url_id'])->first(['id']);
-//
-        var_dump($data);
-//
-//        var_dump('--->', $storageDownloadRow);
 
         if ($storageDownloadRow) {
             var_dump('FOUND');
