@@ -10,8 +10,6 @@ class CreateStorageDownloadPipe extends AbstractPipe
 {
     const INTRODUCE_MESSAGE = 'Create new download row';
 
-    private $tableName = 'storage_download';
-
     public function __invoke(Task $task): Task
     {
         $task = parent::__invoke($task);
@@ -53,11 +51,11 @@ class CreateStorageDownloadPipe extends AbstractPipe
             'download_url_id' => $downloadUrlRowId
         ];
 
-        $storageDownloadRow = Capsule::table($this->tableName)
+        $storageDownloadRow = Capsule::table('storage_download')
             ->where('storage_id', $data['storage_id'])
             ->where('download_url_id', $data['download_url_id'])->first(['id']);
 //
-//        var_dump($data);
+        var_dump($data);
 //
 //        var_dump('--->', $storageDownloadRow);
 
@@ -66,7 +64,7 @@ class CreateStorageDownloadPipe extends AbstractPipe
             return $storageDownloadRow->id;
         } else {
             var_dump('NOT FOUND');
-            return Capsule::table($this->tableName)->insertGetId($data);
+            return Capsule::table('storage_download')->insertGetId($data);
         }
     }
 }
