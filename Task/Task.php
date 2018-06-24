@@ -1,27 +1,30 @@
-<?php
-/**
- * Created by PhpStorm.
- * User: lov3catch
- * Date: 25.05.18
- * Time: 23:34
- */
+<?php declare(strict_types=1);
 
 namespace Task;
 
+use stdClass;
+
 class Task
 {
+    /** @var string */
     private $downloadUrl;
 
+    /** @var string */
     private $filePath;
 
+    /** @var  StdClass */
     private $storage;
 
+    /** @var string */
     private $botToken;
 
+    /** @var int */
     private $downloadRowId;
 
+    /** @var array */
     private $uploadResult;
 
+    /** @var int */
     private $downloadResultRowId;
 
     /**
@@ -31,7 +34,7 @@ class Task
      * @param $storage
      * @param $botToken
      */
-    public function __construct($downloadUrl, $filePath, $storage, $botToken)
+    public function __construct(string $downloadUrl, string $filePath, stdClass $storage, string $botToken)
     {
         $this->downloadUrl = $downloadUrl;
         $this->filePath = $filePath;
@@ -40,81 +43,81 @@ class Task
     }
 
     /**
-     * @return mixed
+     * @return string
      */
-    public function getDownloadUrl()
+    public function getDownloadUrl(): string
     {
         return $this->downloadUrl;
     }
 
     /**
-     * @return mixed
+     * @return string
      */
-    public function getFilePath()
+    public function getFilePath(): string
     {
         return $this->filePath;
     }
 
     /**
-     * @return mixed
+     * @return stdClass
      */
-    public function getStorage()
+    public function getStorage(): stdClass
     {
         return $this->storage;
     }
 
     /**
-     * @return mixed
+     * @return string
      */
-    public function getBotToken()
+    public function getBotToken(): string
     {
         return $this->botToken;
     }
 
     /**
-     * @return mixed
+     * @return int
      */
-    public function getDownloadRowId()
+    public function getDownloadRowId(): int
     {
         return $this->downloadRowId;
     }
 
     /**
-     * @param mixed $downloadRowId
+     * @param int $downloadRowId
      */
-    public function setDownloadRowId($downloadRowId): void
+    public function setDownloadRowId(int $downloadRowId): void
     {
         $this->downloadRowId = $downloadRowId;
     }
 
     /**
-     * @return mixed
+     * @return array
      */
-    public function getUploadResult()
+    public function getUploadResult(): array
     {
         return $this->uploadResult;
     }
 
     /**
-     * @param mixed $uploadResult
+     * @param array $uploadResult
      */
-    public function setUploadResult($uploadResult): void
+    public function setUploadResult(array $uploadResult): void
     {
         $this->uploadResult = $uploadResult;
     }
 
     /**
-     * @return mixed
+     * @return int
      */
-    public function getDownloadResultRowId()
+    public function getDownloadResultRowId(): int
     {
         return $this->downloadResultRowId;
     }
 
     /**
-     * @param mixed $downloadResultRowId
+     * @param int $downloadResultRowId
      */
-    public function setDownloadResultRowId($downloadResultRowId): void
+    public function setDownloadResultRowId(int $downloadResultRowId): void
     {
         $this->downloadResultRowId = $downloadResultRowId;
     }

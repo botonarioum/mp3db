@@ -3,8 +3,8 @@
 ini_set('memory_limit', '-1');
 
 require __DIR__ . '/vendor/autoload.php';
+
 require __DIR__ . '/Task/Task.php';
-require __DIR__ . '/Entities/Storage.php';
 require __DIR__ . '/Pipes/PipeInterface.php';
 require __DIR__ . '/Pipes/AbstractPipe.php';
 require __DIR__ . '/Pipes/ShowSeparatorPipe.php';
@@ -58,6 +58,35 @@ $capsule->bootEloquent();
 
 $storageList = Capsule::table('storage')->get()->toArray();
 
+$createStorageDownloadPipe = (new CreateStorageDownloadPipe);
+$save2folderPipe = (new Save2folderPipe);
+$changeId3TagsPipe = (new ChangeId3TagsPipe);
+$uploadPipe = (new UploadPipe)->setHttpClient(new GuzzleHttp\Client());
+$createStorageDownloadResultPipe = (new CreateStorageDownloadResultPipe);
+$attachStorageDownloadResultToStorageDownloadPipe = (new AttachStorageDownloadResultToStorageDownloadPipe);
+$separatorPipe = (new ShowSeparatorPipe);
+
+$pipeline = (new Pipeline)
+    ->pipe($createStorageDownloadPipe)
+    ->pipe($save2folderPipe)
+    ->pipe($changeId3TagsPipe)
+    ->pipe($uploadPipe)
+    ->pipe($createStorageDownloadResultPipe)
+    ->pipe($attachStorageDownloadResultToStorageDownloadPipe)
+    ->pipe($separatorPipe);
+
+function handleForAll(string $filePath, string $downloadUrl, array $storageList, string $botToken, Pipeline $pipeline)
+{
+    foreach ($storageList as $storage) {
+        $task = new Task($downloadUrl, $filePath, $storage, $botToken);
+        try {
+            $pipeline->process($task);
+        } catch (Exception $exception) {
+            // Do not show exceptions
+            // var_dump($exception->getMessage());
+        }
+    }
+}
 /**
  * @param string $basePath
  * @param string $storageDirectory
@@ -69,59 +98,6 @@ function generateFilename(string $basePath = __DIR__, string $storageDirectory =
     $fileExtension = 'mp3';
 
     return sprintf('%s/%s/%s.%s', $basePath, $storageDirectory, $fileName, $fileExtension);
-}
-
-//function handle(stdClass $storage, string $filePath, string $downloadUrl, string $botToken)
-//{
-//    // Create new download row
-//    $downloadRowId = createStorageDownload($storage, $downloadUrl);
-//
-//    // Save file to local folder
-//    save2folder($filePath, $downloadUrl);
-//
-//    // Change Id3
-//    changeId3($filePath, ['album' => ['botonarioum.com'], 'comment' => ['Botonarioum - the largest catalog of bots']]);
-//
-//    // Upload to storage
-//    $uploadResult = upload($filePath, $storage, $botToken);
-//
-//    // Create new download result row
-//    $downloadResultRowId = createStorageDownloadResult($storage, $uploadResult);
-//
-//    // Attach result row to download row
-//    attachStorageDownloadResultToStorageDownload($downloadRowId, $downloadResultRowId);
-//}
-
-$createStorageDownloadPipe = (new CreateStorageDownloadPipe);
-$save2folderPipe = (new Save2folderPipe);
-$changeId3TagsPipe = (new ChangeId3TagsPipe);
-$uploadPipe = (new UploadPipe);
-$createStorageDownloadResultPipe = (new CreateStorageDownloadResultPipe);
-$attachStorageDownloadResultToStorageDownloadPipe = (new AttachStorageDownloadResultToStorageDownloadPipe);
-$separatorPipe = (new ShowSeparatorPipe());
-
-$pipeline = (new Pipeline)
-    ->pipe($createStorageDownloadPipe)
-    ->pipe($save2folderPipe)
-    ->pipe($changeId3TagsPipe)
-    ->pipe($uploadPipe)
-    ->pipe($createStorageDownloadResultPipe)
-    ->pipe($attachStorageDownloadResultToStorageDownloadPipe)
-    ->pipe($separatorPipe);
-
-//$pipeline->process(new Task('http://example.com'));
-
-function handleForAll(string $filePath, string $downloadUrl, array $storageList, string $botToken, $pipeline)
-{
-    foreach ($storageList as $storage) {
-        $task = new Task($downloadUrl, $filePath, $storage, $botToken);
-        try {
-            $pipeline->process($task);
-        } catch (Exception $exception) {
-            // Do not show exceptions
-            // var_dump($exception->getMessage());
-        }
-    }
 }
 
 $callback = function (AMQPMessage $message) use ($storageList, $botToken, $pipeline) {

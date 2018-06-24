@@ -2,14 +2,19 @@
 
 namespace Pipes;
 
-use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp;
+use GuzzleHttp\Exception\GuzzleException;
 use stdClass;
 use Task\Task;
 
 class UploadPipe extends AbstractPipe
 {
     const INTRODUCE_MESSAGE = 'Upload to telegram-storage';
+
+    const SEND_AUDIO_URL = 'https://api.telegram.org/bot%s/sendAudio';
+
+    /** @var GuzzleHttp\Client */
+    private $httpClient;
 
     public function __invoke(Task $task): Task
     {
@@ -18,6 +23,16 @@ class UploadPipe extends AbstractPipe
         $this->process($task);
 
         return $task;
+    }
+
+    /**
+     * @param GuzzleHttp\Client $httpClient
+     * @return UploadPipe
+     */
+    public function setHttpClient(GuzzleHttp\Client $httpClient): UploadPipe
+    {
+        $this->httpClient = $httpClient;
+        return $this;
     }
 
     public function process(Task $task)
@@ -47,9 +62,8 @@ class UploadPipe extends AbstractPipe
         ]
         ];
 
-        $uploadUrl = sprintf('https://api.telegram.org/bot%s/sendAudio', $botToken);
-        $client = new GuzzleHttp\Client();
-        $uploading = $client->request('POST', $uploadUrl, $options);
+        $uploadUrl = sprintf(self::SEND_AUDIO_URL, $botToken);
+        $uploading = $this->httpClient->request('POST', $uploadUrl, $options);
         $uploadResult = json_decode($uploading->getBody()->getContents(), true);
 
         return $uploadResult;
