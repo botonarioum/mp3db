@@ -14,6 +14,7 @@ require __DIR__ . '/Pipes/CreateStorageDownloadResultPipe.php';
 require __DIR__ . '/Pipes/Save2folderPipe.php';
 require __DIR__ . '/Pipes/ChangeId3TagsPipe.php';
 require __DIR__ . '/Pipes/UploadPipe.php';
+require __DIR__ . '/Pipes/RemoveTempFilePipe.php';
 
 use League\Pipeline\Pipeline;
 use Illuminate\Database\Capsule\Manager as Capsule;
@@ -27,6 +28,7 @@ use Pipes\Save2folderpipe;
 use Pipes\ChangeId3TagsPipe;
 use Pipes\UploadPipe;
 use Pipes\AttachStorageDownloadResultToStorageDownloadPipe;
+use Pipes\RemoveTempFilePipe;
 
 define('DEFAULT_TITLE', 'unknown track');
 define('DEFAULT_ARTIST', 'unknown artist');
@@ -64,6 +66,7 @@ $changeId3TagsPipe = (new ChangeId3TagsPipe);
 $uploadPipe = (new UploadPipe)->setHttpClient(new GuzzleHttp\Client());
 $createStorageDownloadResultPipe = (new CreateStorageDownloadResultPipe);
 $attachStorageDownloadResultToStorageDownloadPipe = (new AttachStorageDownloadResultToStorageDownloadPipe);
+$temporaryFileKiller = (new RemoveTempFilePipe);
 $separatorPipe = (new ShowSeparatorPipe);
 
 $pipeline = (new Pipeline)
@@ -73,6 +76,7 @@ $pipeline = (new Pipeline)
     ->pipe($uploadPipe)
     ->pipe($createStorageDownloadResultPipe)
     ->pipe($attachStorageDownloadResultToStorageDownloadPipe)
+    ->pipe($temporaryFileKiller)
     ->pipe($separatorPipe);
 
 function handleForAll(string $filePath, string $downloadUrl, array $storageList, string $botToken, Pipeline $pipeline)
