@@ -21,12 +21,14 @@ class CreateStorageDownloadPipe extends AbstractPipe
 
     public function process(Task $task)
     {
-        $storage = $task->getStorage();
+        $storages = $task->getStorages();
         $downloadUrl = $task->getDownloadUrl();
 
-        $storageDownloadId = $this->run($storage, $downloadUrl);
+        foreach ($storages as $storage) {
+            $storageDownloadId = $this->run($storage, $downloadUrl);
 
-        $task->setDownloadRowId($storageDownloadId);
+            $task->setDownloadRowId($storageDownloadId);
+        }
     }
 
     /**

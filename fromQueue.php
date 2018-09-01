@@ -81,14 +81,12 @@ $pipeline = (new Pipeline)
 
 function handleForAll(string $filePath, string $downloadUrl, array $storageList, string $botToken, Pipeline $pipeline)
 {
-    foreach ($storageList as $storage) {
-        $task = new Task($downloadUrl, $filePath, $storage, $botToken);
-        try {
-            $pipeline->process($task);
-        } catch (Exception $exception) {
-            // Do not show exceptions
-            // var_dump($exception->getMessage());
-        }
+    try {
+        $task = new Task($downloadUrl, $filePath, $storageList, $botToken);
+        $pipeline->process($task);
+    } catch (Exception $exception) {
+        // Do not show exceptions
+        // var_dump($exception->getMessage());
     }
 }
 /**

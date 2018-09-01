@@ -38,12 +38,14 @@ class UploadPipe extends AbstractPipe
     public function process(Task $task)
     {
         $filePath = $task->getFilePath();
-        $storage = $task->getStorage();
+        $storages = $task->getStorages();
         $botToken = $task->getBotToken();
 
-        $uploadResult = $this->run($filePath, $storage, $botToken);
+        foreach ($storages as $storage) {
+            $uploadResult = $this->run($filePath, $storage, $botToken);
 
-        $task->setUploadResult($uploadResult);
+            $task->setUploadResult($uploadResult);
+        }
     }
 
     /**

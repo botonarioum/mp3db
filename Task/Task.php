@@ -2,8 +2,6 @@
 
 namespace Task;
 
-use stdClass;
-
 class Task
 {
     /** @var string */
@@ -12,8 +10,8 @@ class Task
     /** @var string */
     private $filePath;
 
-    /** @var  StdClass */
-    private $storage;
+    /** @var  array */
+    private $storages;
 
     /** @var string */
     private $botToken;
@@ -29,16 +27,16 @@ class Task
 
     /**
      * Task constructor.
-     * @param $downloadUrl
-     * @param $filePath
-     * @param $storage
-     * @param $botToken
+     * @param string $downloadUrl
+     * @param string $filePath
+     * @param array $storages
+     * @param string $botToken
      */
-    public function __construct(string $downloadUrl, string $filePath, stdClass $storage, string $botToken)
+    public function __construct(string $downloadUrl, string $filePath, array $storages, string $botToken)
     {
         $this->downloadUrl = $downloadUrl;
         $this->filePath = $filePath;
-        $this->storage = $storage;
+        $this->storages = $storages;
         $this->botToken = $botToken;
     }
 
@@ -59,11 +57,11 @@ class Task
     }
 
     /**
-     * @return stdClass
+     * @return array
      */
-    public function getStorage(): stdClass
+    public function getStorages(): array
     {
-        return $this->storage;
+        return $this->storages;
     }
 
     /**
